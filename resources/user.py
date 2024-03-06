@@ -46,19 +46,19 @@ class UserRegister(MethodView):
         db.session.add(user)
         db.session.commit()
 
-        send_simple_message(
-           to=user.email,
-           subject="Successfully signed up",
-           body=f"Hi {user.username}! You have successfully signed up to the Stores REST API."
-        )
+        # send_simple_message(
+        #    to=user.email,
+        #    subject="Successfully signed up",
+        #    body=f"Hi {user.username}! You have successfully signed up to the Stores REST API."
+        # )
 
-        # mailgun_response = send_simple_message(
-        #                to=user.email,
-        #                subject="Successfully signed up",
-        #                body=f"Hi {user.username}! You have successfully signed up to the Stores REST API."
-        #            )
+        mailgun_response = send_simple_message(
+                       to=user.email,
+                       subject="Successfully signed up",
+                       body=f"Hi {user.username}! You have successfully signed up to the Stores REST API."
+                   )
  
-        # print(mailgun_response)
+        print(mailgun_response)
         return{"message": "User created successfully"}, 201
     
 
