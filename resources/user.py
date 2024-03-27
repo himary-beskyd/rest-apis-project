@@ -5,6 +5,10 @@ from flask_smorest import Blueprint, abort
 from passlib.hash import pbkdf2_sha256
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, get_jwt, jwt_required
 from sqlalchemy import or_
+import redis
+from rq import Queue
+from tasks import send_user_registration_email
+from flask import current_app
 
 from db import db
 from models import UserModel
@@ -13,18 +17,6 @@ from blocklist import BLOCKLIST
 
 blp = Blueprint("Users", "users", description="Operations on users")
 
-def send_simple_message(to, subject, body):
-    domain = os.getenv("MAILGUN_DOMAIN")
-    return requests.post(
-        f"https://api.mailgun.net/v3/{domain}/messages",
-        auth=("api", os.getenv("MAILGUN_API_KEY")),
-        data={
-            "from": f"Your Name <mailgun@{domain}>",
-            "to": [to],
-            "subject": subject,
-            "text": body,
-        },
-    )
 
 @blp.route("/register")
 class UserRegister(MethodView):
@@ -46,19 +38,8 @@ class UserRegister(MethodView):
         db.session.add(user)
         db.session.commit()
 
-        # send_simple_message(
-        #    to=user.email,
-        #    subject="Successfully signed up",
-        #    body=f"Hi {user.username}! You have successfully signed up to the Stores REST API."
-        # )
+        current_app.queue.enqueue(send_user_registration_email, user.email, user.username)
 
-        mailgun_response = send_simple_message(
-                       to=user.email,
-                       subject="Successfully signed up",
-                       body=f"Hi {user.username}! You have successfully signed up to the Stores REST API."
-                   )
- 
-        print(mailgun_response)
         return{"message": "User created successfully"}, 201
     
 
